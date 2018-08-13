@@ -1,0 +1,50 @@
+@using AwesomeMvcDemo.Models
+@using (Html.Awe().BeginContext())
+{
+    var gridId = "DinnersGrid";
+    <div class="bar">
+        <div style="float: right;">
+            @Html.Awe().TextBox("txtSearch2").Placeholder("search...").CssClass("searchtxt")
+        </div>
+        @Html.InlineCreateButtonForGrid(gridId)
+        @{
+            var chefId = Db.Chefs.First().Id;
+            var meals = Db.Meals.Take(2).Select(o => o.Id).ToArray();
+            var initObj = new { Name = "hi there", Date = DateTime.Now.ToShortDateString(), ChefId = chefId, MealsIds = meals, OrganicChecked = "checked" };
+        }
+
+        @Html.InlineCreateButtonForGrid(gridId, initObj, "Create with predefined values")
+    </div>
+
+    @Html.InitDeletePopupForGrid(gridId, "GridInlineEditDemo")
+
+        @(Html.Awe().Grid(gridId)
+                .Mod(o => o.PageInfo().InlineEdit(Url.Action("Create"), Url.Action("Edit"))).Url(Url.Action("GridGetItems"))
+                .Parent("txtSearch2", "search")
+                .Height(350)
+                .Resizable()
+                .Reorderable()
+                .Attr("data-syncg", "dinner")
+                .Columns(
+          new Column { Bind = "Id", Width = 75 }
+              .Mod(o => o.InlineId()),
+
+          new Column { Bind = "Name" }
+              .Mod(o => o.Inline(Html.Awe().TextBox("Name"))),
+
+          new Column { Bind = "Date", Width = 170 }
+              .Mod(o => o.Inline(Html.Awe().DatePicker("Date"))),
+
+          new Column { Bind = "Chef.FirstName,Chef.LastName", ClientFormat = ".ChefName", Header = "Chef", Width = 200 }
+              .Mod(o => o.Inline(Html.Awe().Lookup("Chef").Controller("ChefLookup"), "ChefId")),
+
+          new Column { ClientFormat = ".Meals", Header = "Meals", Width = 220 }
+              .Mod(o => o.Inline(Html.Awe().AjaxCheckboxList("Meals").Multiselect().DataFunc("utils.getItems(meals)"), "MealsIds")),
+
+          new Column { Bind = "BonusMeal.Name", ClientFormat = ".BonusMeal", Header = "Bonus Meal" }
+              .Mod(o => o.Inline(Html.Awe().AjaxRadioList("BonusMealId").DataFunc("utils.getItems(meals)").Odropdown(), "BonusMealId")),
+
+          new Column { Bind = "Organic", Width = 100, ClientFormat = ".DispOrganic" }
+              .Mod(o => o.InlineBool(cssClass: "btoggle")),
+          new Column { ClientFormat = GridUtils.InlineEditFormat(), Width = 70 },
+          new Column { ClientFormat = Html.InlineDeleteFormatForGrid(gridId), Width = 80 }))}

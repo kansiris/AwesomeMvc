@@ -1,0 +1,44 @@
+@model AwesomeMvcDemo.ViewModels.Input.LookupCrudDemoInput
+@{
+    ViewBag.Title = "Lookup with CRUD functionality inside its Popup";
+}
+
+<h3>Lookups with CRUD functionality in the Popup</h3>
+@*begin*@
+@using (Html.BeginForm())
+{
+    <div class="efield">
+        <div class="elabel">
+            Lookup:
+        </div>
+        <div class="einput">
+            @(Html.Awe().LookupFor(o => o.Dinner2)
+                  .LookupGrid(Url.Action("DinnerLookup"))
+                  .GetItemUrl(Url.Action("GetDinnerItem", "Data"))
+                  .Fullscreen())
+        </div>
+        @Html.ValidationMessageFor(o => o.Dinner2)
+    </div>
+    <div class="efield">
+        <div class="elabel">
+            MultiLookup:
+        </div>
+        <div class="einput">
+            @(Html.Awe().MultiLookupFor(o => o.Dinner3)
+                  .MultiLookupGrid(Url.Action("DinnerMultiLookup"))
+                  .GetItemsUrl(Url.Action("GetDinnerItems", "Data"))
+                  .Fullscreen())
+        </div>
+        @Html.ValidationMessageFor(o => o.Dinner3)
+    </div>
+    <input type="submit" value="Submit" class="awe-btn mbtn" />
+}
+@*end*@
+<br />
+<div class="tabs">
+    <div data-caption="view">
+        @Html.Source("CrudInLookup/Index.cshtml")
+    </div>
+    <div data-caption="dinner lookup view">@Html.Source("CrudInLookup/DinnerLookup.cshtml")</div>
+    <div data-caption="dinner multilookup view">@Html.Source("CrudInLookup/DinnerMultiLookup.cshtml")</div>
+</div>

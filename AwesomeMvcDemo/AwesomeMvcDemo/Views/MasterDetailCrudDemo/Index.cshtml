@@ -1,0 +1,192 @@
+@{
+    ViewBag.Title = "Master Details Demo using ASP.net MVC Awesome Grid and PopupForm";
+}
+<h2>Master Detail CRUD Demo using Grid and PopupForm</h2>
+This is a demo for master detail CRUD using the Grid.<br />
+For master-detail grid see <a href="@Url.Action("Index", "GridNestingDemo")#Master-detail-grid">Master Detail Grid</a>, or <a href="@Url.Action("Index","GridNestingDemo")#Nested-grids--Hierarchy">Hierarchy (Nested Grids)</a>
+@*begin*@
+@Html.InitCrudPopupsForGrid("RestaurantGrid", "MasterDetailCrudDemo", 470, 1000)
+
+<div class="bar">
+    <button type="button" class="awe-btn mbtn" onclick="awe.open('createRestaurantGrid')">Create</button>
+</div>
+
+@(Html.Awe().Grid("RestaurantGrid")
+            .Height(350)
+            .Attr("data-syncg", "rest")
+            .Url(Url.Action("RestaurantGridGetItems"))
+            .Groupable(false)
+            .Columns(
+            new Column { ClientFormat = ".Id", Header = "Id", Width = 70 },
+            new Column { Bind = "Name" },
+            new Column { ClientFormat = GridUtils.EditFormatForGrid("RestaurantGrid"), Width = 50 },
+            new Column { ClientFormat = GridUtils.DeleteFormatForGrid("RestaurantGrid"), Width = 50 }))
+@*end*@
+
+<div class="tabs code">
+    <div data-caption="main view">@Html.Source("MasterDetailCrudDemo/Index.cshtml")</div>
+    <div data-caption="master create view">@Html.Source("MasterDetailCrudDemo/Create.cshtml")</div>
+    <div data-caption="detail create view">@Html.Source("AddressesGridCrud/Create.cshtml")</div>
+    <div data-caption="master crud controller">@Html.Csource("Demos/Grid/MasterDetailCrud/MasterDetailCrudDemoController.cs")</div>
+    <div data-caption="detail crud controller">@Html.Csource("Demos/Grid/MasterDetailCrud/AddressesGridCrudController.cs")</div>
+</div>
+
+<h2>Master Detail CRUD using in nest editing</h2>
+
+@*begin2*@
+@Html.InitCrudForGridNest("RestaurantGrid2", "MasterDetailCrudDemo")
+
+<div class="bar">
+    <button type="button" onclick="utils.nestCreate('RestaurantGrid2', 'createRestaurantGrid2')" class="awe-btn mbtn">Create</button>
+</div>
+
+@(Html.Awe().Grid("RestaurantGrid2")
+                .Url(Url.Action("RestaurantGridGetItems"))
+                .PageSize(10)
+                .Attr("data-syncg", "rest")
+                .Nests(
+                    new Nest { Name = "editnst", GetFunc = "utils.loadNestPopup('editRestaurantGrid2')" },
+                    new Nest { Name = "delnst", GetFunc = "utils.loadNestPopup('deleteRestaurantGrid2')" })
+                .Columns(
+                        new Column { ClientFormat = ".Id", Header = "Id", Width = 70 },
+                        new Column { Bind = "Name" },
+                        new Column { ClientFormat = GridUtils.EditGridNestFormat(), Width = 50 },
+                        new Column { ClientFormat = GridUtils.DeleteGridNestFormat(), Width = 50 }))
+@*end2*@
+
+<div class="tabs code">
+    <div data-caption="view">@Html.Source("MasterDetailCrudDemo/Index.cshtml", 2)</div>
+</div>
+
+<h3>Master Detail CRUD using Inline Editing and nesting</h3>
+@*begingl*@
+@{
+    var grid3 = "RestaurantGridInline";
+}
+
+@Html.InitDeletePopupForGrid(grid3)
+
+<div class="bar">
+    @Html.Awe().Button().Text("Create").OnClick("$('#" + grid3 + "').data('api').inlineCreate()").CssClass("mbtn")
+</div>
+
+@(Html.Awe().Grid(grid3)
+      .Url(Url.Action("RestaurantGridGetItems"))
+      .Mod(o => o.InlineEdit(Url.Action("Create", "RestInl"), Url.Action("Edit", "RestInl"), rowClickEdit: true))
+      .Groupable(false)
+      .Attr("data-syncg", "rest")
+      .Nests(new Nest { Name = "detailnst", Url = Url.Action("Addresses", "RestInl"), LoadOnce = true})
+      .Columns(
+          new Column { ClientFormat = ".Id", Header = "Id", Width = 70 }.Mod(o => o.InlineId()),
+          new Column { Bind = "Name" }.Mod(o => o.Inline(Html.Awe().TextBox("Name"))),
+          new Column { ClientFormat = "<button type='button' class='awe-btn o-pad detailnst'>details <i class='caretc'><i class='o-caret'></i></i></button>", Width = 105 },
+          new Column { ClientFormat = GridUtils.InlineEditFormat(), Width = 70 },
+          new Column { ClientFormat = Html.InlineDeleteFormatForGrid(grid3), Width = 80 }))
+<style>
+    /* hide addresses button for new rows */
+    .o-glnew .detailnst {
+        display: none;
+    }
+
+    .caretc
+    {
+        position: relative;
+        padding: .4em .5em;
+        display: inline-block;
+    }
+
+    .caretc .o-caret
+    {
+        transform: rotate(-90deg);
+        zoom: 1.1;
+    }
+
+    .detailnst-on .caretc .o-caret
+    {
+        transform:  rotate(0);
+    }
+</style>
+@*endgl*@
+<div class="tabs code">
+    <div data-caption="view">@Html.Source("MasterDetailCrudDemo/Index.cshtml", "gl")</div>
+    <div data-caption="nest view">@Html.Source("RestInl/Addresses.cshtml")</div>
+    <div data-caption="RestInl controller">@Html.Csource("Demos/Grid/MasterDetailCrud/RestInlController.cs")</div>
+</div>
+<br/>
+<br/>
+<h2>Data sync</h2>
+<div class="expl">
+    Grids on this page are being synced using SignalR and grid api,
+    so when you edit or delete an item you'll notice the change in the other grid, and it will also be noticed by other users seeing this page.
+</div>
+
+@Html.Source("MasterDetailCrudDemo/Index.cshtml", "sync", true)
+
+@*beginsync*@
+<script src="@Url.Content("~/Scripts/jquery.signalR-2.2.2.min.js")"></script>
+<script src="@Url.Content("~/signalr/hubs")"></script>
+
+<script type="text/javascript">
+    function initSync() {
+        var hub = $.connection.syncHub;
+        var connId;
+
+        hub.client.broadcastMessage = function (srccid, srcgid, key, act, group) {
+            $('.awe-grid[data-syncg="' + group + '"]').each(function (_, el) {
+                updateRow($(el), srccid, srcgid, key, act);
+            });
+        };
+
+        $.connection.hub.start().done(function () {
+            connId = $.connection.hub.id;
+            $(document)
+                .on('itemdelete', function (e) {
+                    send(e, 'del');
+                })
+                .on('aweinlinesave itemedit', '.awe-row', function (e) {
+                    send(e, '');
+                });
+        });
+
+        function send(e, act) {
+            var key = $(e.target).data('k');
+            var grid = $(e.target).closest('.awe-grid');
+            var srcgid = grid.attr('id');
+            trysend(function () { hub.server.send(connId, srcgid, key, act, grid.data('syncg')); });
+        }
+
+        function trysend(action, attempts) {
+            attempts = attempts || 0;
+            try {
+                action();
+            } catch (err) {
+                if (attempts < 1) {
+                    $.connection.hub.start();
+                    setTimeout(function () {
+                        trysend(action, attempts + 1);
+                    }, 300);
+                }
+            }
+        }
+
+        function updateRow(g, srccid, srcgid, key, act) {
+            var gid = g.attr('id');
+            if (srccid == connId && srcgid == gid) return;
+            var row = g.find('.awe-row[data-k="' + key + '"]');
+            if (row.length && !row.hasClass('o-glrow')) {
+                if (act == 'del')
+                    utils.delRow(row);
+                else
+                    utils.itemEdited(gid, 1)({ id: key });
+            }
+        }
+    }
+
+    $(function () {
+        try {
+            initSync();
+        } catch (err) {
+        }
+    });
+</script>
+@*endsync*@

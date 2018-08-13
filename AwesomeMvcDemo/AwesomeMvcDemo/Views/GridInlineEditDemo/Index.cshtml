@@ -1,0 +1,232 @@
+@using AwesomeMvcDemo.Models
+@{
+    ViewBag.Title = "Grid inline editing demo";
+}
+
+<h2>Grid inline editing demo</h2>
+@*begin*@
+
+<div class="bar">
+    <div style="float: right;">
+        @Html.Awe().TextBox("txtSearch").Placeholder("search...").CssClass("searchtxt")
+    </div>
+    <button type="button" onclick="$('#DinnersGrid').data('api').inlineCreate()" class="awe-btn mbtn">Create</button>
+
+    @{
+        var gridId = "DinnersGrid";
+        var chefId = Db.Chefs.First().Id;
+        var meals = Db.Meals.Take(2).Select(o => o.Id).ToArray();
+        var initObj = new { Name = "hi there", Date = DateTime.Now.ToShortDateString(), ChefId = chefId, MealsIds = meals };
+    }
+    @Html.InlineCreateButtonForGrid(gridId, initObj, "Create with predefined values")
+</div>
+
+@Html.InitDeletePopupForGrid(gridId, "GridInlineEditDemo")
+
+@(Html.Awe().Grid(gridId)
+      .Mod(o => o.PageInfo().InlineEdit(Url.Action("Create"), Url.Action("Edit")))
+      .Url(Url.Action("GridGetItems"))
+      .Parent("txtSearch", "search")
+      .Height(350)
+      .Resizable()
+      .Reorderable()
+      .Attr("data-syncg", "dinner")
+      .Columns(
+          new Column { Bind = "Id", Width = 75 }
+          .Mod(o => o.InlineId()),
+
+          new Column { Bind = "Name" }
+          .Mod(o => o.Inline(Html.Awe().TextBox("Name"))),
+
+          new Column { Bind = "Date", Width = 170 }
+          .Mod(o => o.Inline(Html.Awe().DatePicker("Date").ReadonlyInput().ChangeYear().ChangeMonth())),
+
+          new Column { Bind = "Chef.FirstName,Chef.LastName", ClientFormat = ".ChefName", Header = "Chef", Width = 200 }
+            .Mod(o => o.Inline(Html.Awe().Lookup("Chef").Controller("ChefLookup"), "ChefId")),
+
+          new Column { ClientFormat = ".Meals", Header = "Meals", Width = 250 }
+            .Mod(o => o.Inline(Html.Awe().AjaxCheckboxList("Meals").Multiselect().DataFunc("utils.getItems(meals)"), "MealsIds")),
+
+          new Column { Bind = "BonusMeal.Name", ClientFormat = ".BonusMeal", Header = "Bonus Meal" }
+            .Mod(o => o.Inline(Html.Awe().AjaxRadioList("BonusMealId").Odropdown().DataFunc("utils.getItems(meals)"), "BonusMealId")),
+
+          new Column { Bind = "Organic", Width = 100, ClientFormat = ".DispOrganic" }
+            .Mod(o => o.InlineBool(cssClass: "btoggle")),
+
+          new Column { ClientFormat = GridUtils.InlineEditFormat(), Width = 70 },
+          new Column { ClientFormat = Html.InlineDeleteFormatForGrid(gridId), Width = 80 }))
+
+<link href="https://gitcdn.github.io/bootstrap-toggle/2.2.0/css/bootstrap-toggle.min.css" rel="stylesheet">
+<script src="https://gitcdn.github.io/bootstrap-toggle/2.2.0/js/bootstrap-toggle.min.js"></script>
+
+<script>
+    var meals = @Html.Raw(DemoUtils.Encode(Db.Meals.Select(o => new KeyContent(o.Id, o.Name))));
+
+    $(function () {
+        $(document).on('aweinlineedit', function () {
+            $(this).find(".btoggle").bootstrapToggle({
+                on: 'Yes',
+                off: 'No'
+            });
+        });
+    });
+</script>
+@*end*@
+<br />
+<div class="tabs">
+    <div data-caption="description" class="expl">
+        Inline editing for grid achieved using custom mods.<br />
+
+        Delete action is the same as in the grid crud demo, using a popup.<br />
+
+        To set initial values on create set the initial model as a parameter in the inlineCreate method (as done on the home page), example: $grid.data('api').inlineCreate({ Name: 'hi' })<br />
+        On Save you also get the grid parameters, for example this grid has txtSearch as parent, so you get the value of txtSearch as 'search' parameter in the Edit/Create post actions
+
+    </div>
+    <div data-caption="view">@Html.Source("GridInlineEditDemo/Index.cshtml")</div>
+    <div data-caption="controller">@Html.Csource("Demos/Grid/GridInlineEditDemoController.cs")</div>
+</div>
+<br />
+
+<h2>Edit on row click</h2>
+@*begin2*@
+@{ var grid2Id = "DinnersGrid2"; }
+<div class="bar">
+    <div style="float: right;">
+        @Html.Awe().TextBox("txtSearch2").Placeholder("search...").CssClass("searchtxt")
+    </div>
+    <button type="button" onclick="$('#@grid2Id').data('api').inlineCreate()" class="awe-btn mbtn">Create</button>
+</div>
+
+@Html.InitDeletePopupForGrid(grid2Id, "GridInlineEditDemo")
+
+@(Html.Awe().Grid(grid2Id)
+      .Mod(o => o.PageInfo().InlineEdit(Url.Action("Create"), Url.Action("Edit"), rowClickEdit: true))
+      .Url(Url.Action("GridGetItems"))
+      .Parent("txtSearch2", "search")
+      .Height(350)
+      .Resizable()
+      .Reorderable()
+      .Attr("data-syncg", "dinner")
+      .Columns(
+          new Column { Bind = "Id", Width = 75 }
+          .Mod(o => o.InlineId()),
+
+          new Column { Bind = "Name" }
+          .Mod(o => o.Inline(Html.Awe().TextBox("Name"))),
+
+          new Column { Bind = "Date", Width = 170 }
+          .Mod(o => o.Inline(Html.Awe().DatePicker("Date").ReadonlyInput().ChangeYear().ChangeMonth())),
+
+          new Column { Bind = "Chef.FirstName,Chef.LastName", ClientFormat = ".ChefName", Header = "Chef", Width = 200 }
+            .Mod(o => o.Inline(Html.Awe().Lookup("Chef").Controller("ChefLookup"), "ChefId")),
+
+          new Column { ClientFormat = ".Meals", Header = "Meals", Width = 250 }
+            .Mod(o => o.Inline(Html.Awe().AjaxCheckboxList("Meals").Multiselect().DataFunc("utils.getItems(meals)"), "MealsIds")),
+
+          new Column { Bind = "BonusMeal.Name", ClientFormat = ".BonusMeal", Header = "Bonus Meal" }
+            .Mod(o => o.Inline(Html.Awe().AjaxRadioList("BonusMealId").Odropdown().DataFunc("utils.getItems(meals)"), "BonusMealId")),
+
+          new Column { Bind = "Organic", Width = 100, ClientFormat = ".DispOrganic" }
+            .Mod(o => o.InlineBool(cssClass: "btoggle")),
+
+          new Column { ClientFormat = GridUtils.InlineEditFormat(), Width = 70 },
+          new Column { ClientFormat = Html.InlineDeleteFormatForGrid(grid2Id), Width = 80 }))
+@*end2*@
+<br />
+<div class="tabs">
+    <div data-caption="description" class="expl">
+        Edit on row click, and save when clicking out if there is are any changes. <br />
+        In case of validation errors grid loading (go to another page, sort, group) will be prevented.
+    </div>
+    <div data-caption="view">@Html.Source("GridInlineEditDemo/Index.cshtml", "2")</div>
+</div>
+<br />
+<br />
+
+@Html.Awe().InitPopup().Name("inlineEdit").Url(Url.Action("Popup")).Fullscreen().LoadOnce()
+<button type="button" class="awe-btn mbtn" onclick="awe.open('inlineEdit')">Inline edit inside a popup</button>
+<br />
+<br />
+See also:
+<br />
+@Html.ActionLink("Grid inline editing conditional demo", "ConditionalDemo")<br />
+@Html.ActionLink("Grid inline multiple editors demo", "MultiEditorsDemo")
+<br />
+<br />
+<h2>Data sync</h2>
+<div class="expl">
+    Grids on this page are being synced using SignalR and grid api,
+    so when you edit or delete an item you'll notice the change in the other grid, and it will also be noticed by other users seeing this page.
+</div>
+
+@Html.Source("GridInlineEditDemo/Index.cshtml", "sync", true)
+
+@*beginsync*@
+<script src="@Url.Content("~/Scripts/jquery.signalR-2.2.2.min.js")"></script>
+<script src="@Url.Content("~/signalr/hubs")"></script>
+
+<script type="text/javascript">
+    function initSync() {
+        var hub = $.connection.syncHub;
+        var connId;
+
+        hub.client.broadcastMessage = function (srccid, srcgid, key, act, group) {
+            if (group != 'dinner') return;
+            $('.awe-grid[data-syncg="' + group + '"]').each(function(i, el) {
+                updateRow($(el), srccid, srcgid, key, act);
+            });
+        };
+
+        $.connection.hub.start().done(function () {
+            connId = $.connection.hub.id;
+            $(document)
+                .on('itemdelete', function(e) {
+                    send(e, 'del');
+                })
+                .on('aweinlinesave', '.awe-row', function(e) {
+                    send(e, '');
+                });
+        });
+
+        function send(e, act) {
+            var key = $(e.target).data('k');
+            var srcgid = $(e.target).closest('.awe-grid').attr('id');
+            trysend(function(){ hub.server.send(connId, srcgid, key, act, 'dinner'); });
+        }
+
+        function trysend(action, attempts) {
+            attempts = attempts || 0;
+            try {
+                action();
+            } catch (err) {
+                if (attempts < 1) {
+                    $.connection.hub.start();
+                    setTimeout(function() {
+                        trysend(action, attempts + 1);
+                    }, 300);
+                }
+            }
+        }
+
+        function updateRow(g, srccid, srcgid, key, act) {
+            var gid = g.attr('id');
+            if (srccid == connId && srcgid == gid) return;
+            var row = g.find('.awe-row[data-k="' + key + '"]');
+            if (row.length && !row.hasClass('o-glrow')) {
+                if (act == 'del')
+                    utils.delRow(row);
+                else
+                    utils.itemEdited(gid, 1)({ id: key });
+            }
+        }
+    }
+
+    $(function () {
+        try {
+            initSync();
+        } catch (err) {
+        }
+    });
+</script>
+@*endsync*@

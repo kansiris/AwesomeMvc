@@ -1,0 +1,21 @@
+<div id="demoMenu">
+    @{
+        var action = ViewContext.Controller.ValueProvider.GetValue("action").RawValue.ToString();
+        var controller = ViewContext.Controller.ValueProvider.GetValue("controller").RawValue.ToString();
+    }
+    @Html.Awe().TextBox("msearch").Placeholder("search...").CssClass("msearch")
+    @(Html.Awe().Grid("Menu")
+        .DataFunc("getMenuGridFunc()")
+        .Tag(new { ItemsUrl = Url.Action("GetMenuNodes", "Data") })
+        .ShowGroupBar(false)
+        .ShowHeader(false)
+        .ShowFooter(false)
+        .Persistence(Persistence.Local)
+        .Parameter("controller", controller)
+        .Parameter("action", action)
+        .Parent("msearch", "search", false)
+        .RowClassClientFormat(".Selected")
+        .ColumnWidth(100)
+        .Columns(new Column { ClientFormatFunc = "renderMenuItem" }))
+</div>
+@*tag.ItemsUrl is used in getMenuGridFunc (site.js) to load the items first time the user enters the site*@
